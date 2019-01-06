@@ -2,9 +2,10 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var fs = require('fs');
-var mysql = require('mysql');
+var pg = require('pg').Pool;
 var bodyParser = require('body-parser');
-
+var dbconfig = require('./DBConfig.json');
+POSTGRES_URI=dbconfig?dbconfig.POSTGRES_URI:process.env.DATABASE_URL;
 // parse JSON inputs
 app.use(bodyParser.json());
 
@@ -15,17 +16,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 var users = [];
 var userSockets = {};
-var con = mysql.createConnection({
-  host: "localhost",
-  user: "root",
-  password: "India@123",
-  database: "nodejs"
+var con = new Pool({
+  connectionString: POSTGRES_URI
 });
 app.get('/app', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
 app.post('/signup', function (req, res) {
-  con.query('SELECT name ,pass FROM nodejs.registration where name ="' + req.body.name + '" and pass = "' + req.body.password + '"',
+  con.query('SELECT name ,password FROM nodejs.registration where name ="' + req.body.name + '" and password = "' + req.body.password + '"',
     function (err, rows) {
       if (err) console.log("user does not exist");//throw err;
       if (rows.length > 0) {
@@ -34,7 +32,7 @@ app.post('/signup', function (req, res) {
           message: "User already Exist."
         });
       } else {
-        var sql = 'INSERT INTO nodejs.registration(name, pass) VALUES ? ';
+        var sql = 'INSERT INTO nodejs.registration(name, password) VALUES ? ';
         var values = [
           [req.body.name, req.body.password]
         ];
@@ -56,7 +54,7 @@ app.post('/signup', function (req, res) {
 });
 
 app.post('/signin', function (req, res) {
-  con.query('SELECT name ,pass FROM nodejs.registration where name ="' + req.body.name + '" and pass = "' + req.body.password + '"',
+  con.query('SELECT name ,password FROM nodejs.registration where name ="' + req.body.name + '" and password = "' + req.body.password + '"',
     function (err, rows) {
       if (err) console.log("user does not exist");//throw err;
       if (rows.length > 0)
