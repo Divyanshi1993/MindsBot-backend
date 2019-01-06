@@ -2,7 +2,7 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var fs = require('fs');
-var pg = require('pg').Pool;
+const PGpool = require('pg').Pool;
 var bodyParser = require('body-parser');
 var dbconfig = require('./DBConfig.json');
 POSTGRES_URI=dbconfig?dbconfig.POSTGRES_URI:process.env.DATABASE_URL;
@@ -16,8 +16,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 var users = [];
 var userSockets = {};
-var con = new Pool({
-  connectionString: POSTGRES_URI
+var con = new PGpool({
+  connectionString: POSTGRES_URI,
+  ssl:true,
 });
 app.get('/app', function (req, res) {
   res.sendFile(__dirname + '/index.html');
