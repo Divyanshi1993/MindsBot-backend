@@ -5,7 +5,7 @@ var fs = require('fs');
 const PGclient = require('pg').Client;
 var bodyParser = require('body-parser');
 var dbconfig = require('./DBConfig.json');
-POSTGRES_URI=dbconfig?dbconfig.POSTGRES_URI:process.env.DATABASE_URL;
+POSTGRES_URI = dbconfig ? dbconfig.POSTGRES_URI : process.env.DATABASE_URL;
 // parse JSON inputs
 app.use(bodyParser.json());
 
@@ -18,7 +18,7 @@ var users = [];
 var userSockets = {};
 var dbclient = new PGclient({
   connectionString: POSTGRES_URI,
-  ssl:true,
+  ssl: true,
 });
 app.get('/app', function (req, res) {
   res.sendFile(__dirname + '/index.html');
@@ -28,7 +28,7 @@ app.post('/signup', function (req, res) {
   dbclient.query("SELECT name ,password FROM registration where name ='" + req.body.name + "' and password = '" + req.body.password + "'",
     function (err, rows) {
       if (err) console.log("user does not exist");//throw err;
-      if (rows != undefined && rows.length > 0) {
+      else if (rows != undefined && rows.length > 0) {
         console.log("user already exists.")
         return res.status(200).send({
           message: "User already Exist."
@@ -46,14 +46,16 @@ app.post('/signup', function (req, res) {
               message: "failed to create user."
             });
           }
-          console.log("Number of records inserted: " + result.affectedRows);
-          return res.status(201).send({
-            message: "User Created."
-          });
+          else if (result.affectedRows > 0) {
+            console.log("Number of records inserted: " + result.affectedRows);
+            return res.status(201).send({
+              message: "User Created."
+            });
+          }
         });
       }
     });
-    dbclient.end();
+  dbclient.end();
 });
 
 app.post('/signin', function (req, res) {
@@ -61,12 +63,13 @@ app.post('/signin', function (req, res) {
   dbclient.connect();
   dbclient.query("SELECT name ,password FROM registration where name ='" + req.body.name + "' and password = '" + req.body.password + "'",
     function (err, rows) {
-      if (err) console.log("user does not exist"+err);//throw err;
+      if (err) console.log("user does not exist" + err);//throw err;
       if (rows.length > 0)
         return res.status(200).send({
           message: "Authorized"
         });
     });
+    dbclient.end();
 });
 
 
