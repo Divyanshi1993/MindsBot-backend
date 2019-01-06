@@ -2,7 +2,7 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var fs = require('fs');
-const PGpool = require('pg').Pool;
+const PGclient = require('pg').Client;
 var bodyParser = require('body-parser');
 var dbconfig = require('./DBConfig.json');
 POSTGRES_URI=dbconfig?dbconfig.POSTGRES_URI:process.env.DATABASE_URL;
@@ -16,7 +16,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 var users = [];
 var userSockets = {};
-var con = new PGpool({
+var dbclient = new PGclient({
   connectionString: POSTGRES_URI,
   ssl:true,
 });
@@ -24,7 +24,8 @@ app.get('/app', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
 app.post('/signup', function (req, res) {
-  con.query("SELECT name ,password FROM registration where name ='" + req.body.name + "' and password = '" + req.body.password + "'",
+  dbclient.connect();
+  dbclient.query("SELECT name ,password FROM registration where name ='" + req.body.name + "' and password = '" + req.body.password + "'",
     function (err, rows) {
       if (err) console.log("user does not exist");//throw err;
       if (rows != undefined && rows.length > 0) {
@@ -37,7 +38,7 @@ app.post('/signup', function (req, res) {
         var values = [
           [req.body.name, req.body.password]
         ];
-        con.query(sql, [values], function (err, result) {
+        dbclient.query(sql, [values], function (err, result) {
           if (err) {
             //throw err;
             console.log("error creating user")
@@ -52,11 +53,13 @@ app.post('/signup', function (req, res) {
         });
       }
     });
+    dbclient.end();
 });
 
 app.post('/signin', function (req, res) {
-  console.log(con)
-  con.query("SELECT name ,password FROM registration where name ='" + req.body.name + "' and password = '" + req.body.password + "'",
+  console.log(dbclient)
+  dbclient.connect();
+  dbclient.query("SELECT name ,password FROM registration where name ='" + req.body.name + "' and password = '" + req.body.password + "'",
     function (err, rows) {
       if (err) console.log("user does not exist"+err);//throw err;
       if (rows.length > 0)
