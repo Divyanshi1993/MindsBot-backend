@@ -27,7 +27,7 @@ app.post('/signup', function (req, res) {
   con.query('SELECT name ,password FROM nodejs.registration where name ="' + req.body.name + '" and password = "' + req.body.password + '"',
     function (err, rows) {
       if (err) console.log("user does not exist");//throw err;
-      if (rows.length > 0) {
+      if (rows != undefined && rows.length > 0) {
         console.log("user already exists.")
         return res.status(200).send({
           message: "User already Exist."
