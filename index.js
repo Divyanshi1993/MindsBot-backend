@@ -24,7 +24,7 @@ app.get('/app', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
 app.post('/signup', function (req, res) {
-  con.query('SELECT name ,password FROM nodejs.registration where name ="' + req.body.name + '" and password = "' + req.body.password + '"',
+  con.query('SELECT name ,password FROM registration where name ="' + req.body.name + '" and password = "' + req.body.password + '"',
     function (err, rows) {
       if (err) console.log("user does not exist");//throw err;
       if (rows != undefined && rows.length > 0) {
@@ -33,7 +33,7 @@ app.post('/signup', function (req, res) {
           message: "User already Exist."
         });
       } else {
-        var sql = 'INSERT INTO nodejs.registration(name, password) VALUES ? ';
+        var sql = 'INSERT INTO registration(name, password) VALUES ? ';
         var values = [
           [req.body.name, req.body.password]
         ];
@@ -55,7 +55,7 @@ app.post('/signup', function (req, res) {
 });
 
 app.post('/signin', function (req, res) {
-  con.query('SELECT name ,password FROM nodejs.registration where name ="' + req.body.name + '" and password = "' + req.body.password + '"',
+  con.query('SELECT name ,password FROM registration where name ="' + req.body.name + '" and password = "' + req.body.password + '"',
     function (err, rows) {
       if (err) console.log("user does not exist");//throw err;
       if (rows.length > 0)
