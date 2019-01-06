@@ -111,6 +111,4 @@ io.on('typing', function (socket) {
     io.emit('typing', type);
   });
 });
-http.listen(3000, function () {
-  console.log('listening on *:9900');
-});
+http.listen(process.env.PORT || 3000);
