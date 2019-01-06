@@ -55,9 +55,10 @@ app.post('/signup', function (req, res) {
 });
 
 app.post('/signin', function (req, res) {
+  console.log(con)
   con.query('SELECT name ,password FROM registration where name ="' + req.body.name + '" and password = "' + req.body.password + '"',
     function (err, rows) {
-      if (err) console.log("user does not exist");//throw err;
+      if (err) console.log("user does not exist"+err);//throw err;
       if (rows.length > 0)
         return res.status(200).send({
           message: "Authorized"
