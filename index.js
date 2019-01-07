@@ -20,34 +20,36 @@ var dbclient = new PGclient({
   connectionString: POSTGRES_URI,
   ssl: true,
 });
+
+dbclient.connect();
+
 app.get('/app', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
 app.post('/signup', function (req, res) {
-  dbclient.connect();
   dbclient.query("SELECT name ,password FROM registration where name ='" + req.body.name + "' and password = '" + req.body.password + "'",
-    function (err, rows) {
-      if (err) console.log("user does not exist");//throw err;
-      else if (rows != undefined && rows.length > 0) {
+    function (err, result) {
+      if (err) throw err;
+      if(result.rows.length > 0) {
         console.log("user already exists.")
+       // dbclient.end();
         return res.status(200).send({
           message: "User already Exist."
         });
       } else {
-        var sql = 'INSERT INTO registration(name, password) VALUES ? ';
-        var values = [
-          [req.body.name, req.body.password]
-        ];
-        dbclient.query(sql, [values], function (err, result) {
+        const sql = 'INSERT INTO registration(name, password) VALUES($1, $2) ';
+        const values = ['divya', 'divya'];
+        dbclient.query(sql, values, function (err, result) {
           if (err) {
-            //throw err;
-            console.log("error creating user")
+            console.log("error creating user"+err)
+           // dbclient.end();
             return res.status(400).send({
               message: "failed to create user."
             });
           }
-          else if (result.affectedRows > 0) {
-            console.log("Number of records inserted: " + result.affectedRows);
+          if (result.rowCount > 0) {
+            console.log("Number of records inserted: " + result.rowCount);
+           // dbclient.end();
             return res.status(201).send({
               message: "User Created."
             });
@@ -55,12 +57,12 @@ app.post('/signup', function (req, res) {
         });
       }
     });
-  dbclient.end();
+  //dbclient.end();
 });
 
 app.post('/signin', function (req, res) {
   console.log(dbclient)
-  dbclient.connect();
+ // dbclient.connect();
   dbclient.query("SELECT name ,password FROM registration where name ='" + req.body.name + "' and password = '" + req.body.password + "'",
     function (err, rows) {
       if (err) console.log("user does not exist" + err);//throw err;
@@ -69,7 +71,7 @@ app.post('/signin', function (req, res) {
           message: "Authorized"
         });
     });
-    dbclient.end();
+   // dbclient.end();
 });
 
 
