@@ -20,34 +20,37 @@ var dbclient = new PGclient({
   connectionString: POSTGRES_URI,
   ssl: true,
 });
+var signedUserSocketId
+
+dbclient.connect();
+
 app.get('/app', function (req, res) {
   res.sendFile(__dirname + '/index.html');
 });
 app.post('/signup', function (req, res) {
-  dbclient.connect();
-  dbclient.query("SELECT name ,password FROM registration where name ='" + req.body.name + "' and password = '" + req.body.password + "'",
-    function (err, rows) {
-      if (err) console.log("user does not exist");//throw err;
-      else if (rows != undefined && rows.length > 0) {
+  dbclient.query("SELECT * FROM registration where name ='" + req.body.name + "'",
+    function (err, result) {
+      if (err) throw err;
+      if(result.rows.length > 0) {
         console.log("user already exists.")
-        return res.status(200).send({
+       // dbclient.end();
+        return res.status(400 ).send({
           message: "User already Exist."
         });
       } else {
-        var sql = 'INSERT INTO registration(name, password) VALUES ? ';
-        var values = [
-          [req.body.name, req.body.password]
-        ];
-        dbclient.query(sql, [values], function (err, result) {
+        const sql = 'INSERT INTO registration(name, password, loggedin) VALUES($1, $2,$3) ';
+        const values = [req.body.name , req.body.password,false];
+        dbclient.query(sql, values, function (err, result) {
           if (err) {
-            //throw err;
-            console.log("error creating user")
+            console.log("error creating user"+err)
+           // dbclient.end();
             return res.status(400).send({
               message: "failed to create user."
             });
           }
-          else if (result.affectedRows > 0) {
-            console.log("Number of records inserted: " + result.affectedRows);
+          if (result.rowCount > 0) {
+            console.log("Number of records inserted: " + result.rowCount);
+           // dbclient.end();
             return res.status(201).send({
               message: "User Created."
             });
@@ -55,43 +58,108 @@ app.post('/signup', function (req, res) {
         });
       }
     });
-  dbclient.end();
+  //dbclient.end();
 });
-
+app.post('/signout', function (req, res) {
+  const sql= "UPDATE registration SET loggedin = 'false' WHERE name ='" + req.body.name + "'";
+        //const sql = 'INSERT INTO registration(name, password, loggedin) VALUES($1, $2,$3) ';
+       // const values = [req.body.name ,true];
+        dbclient.query(sql, function (err, result) {
+          if (err) {
+           
+           // dbclient.end();
+            return res.status(400).send({
+              message: "failed update."
+            });
+          }
+          if (result.rowCount > 0) {
+            console.log("sign out")
+            return res.status(201).send({
+              message: "logged out."
+            });
+          }
+   });
+});
 app.post('/signin', function (req, res) {
-  console.log(dbclient)
-  dbclient.connect();
-  dbclient.query("SELECT name ,password FROM registration where name ='" + req.body.name + "' and password = '" + req.body.password + "'",
-    function (err, rows) {
+ console.log(dbclient)
+ // dbclient.connect();
+  dbclient.query("SELECT name , password, loggedin FROM registration where name ='" + req.body.name + "' and password = '" + req.body.password + "'",
+    function (err, result) {
       if (err) console.log("user does not exist" + err);//throw err;
-      if (rows.length > 0)
-        return res.status(200).send({
-          message: "Authorized"
+      if (result.rowCount > 0){
+        if(result.rows[0].loggedin === false){
+        const sql= "UPDATE registration SET loggedin = 'true' WHERE name ='" + req.body.name + "'";
+        //const sql = 'INSERT INTO registration(name, password, loggedin) VALUES($1, $2,$3) ';
+       // const values = [req.body.name ,true];
+        dbclient.query(sql, function (err, result) {
+          if (err) {
+            console.log("error creating user"+err)
+           // dbclient.end();
+            return res.status(400).send({
+              message: "failed to create user."
+            });
+          }
+          if (result.rowCount > 0) {
+            console.log("sign in")
+            return res.status(200).send({
+              message: "Authorized"
+            });
+          }
+        }); 
+       
+      }
+      else{
+        console.log("already loggedin")
+        return res.status(201).send({
+          message: " already loggedin"
+          });
+         }
+         
+     }else {
+        return res.status(404).send({
+          message: "UnAuthorized"
         });
+      }
     });
-    dbclient.end();
+   // dbclient.end();
 });
 
 
-io.on('connection', function (socket) {
+io.on('connection',  (socket) => {
+
   socket.on("connect_user", function (username) {
+   
+    if(!isConected(username)){
     users.push({
       soketId: socket.id,
       name: username
     });
+   }
+   userSockets[socket.id] = socket;
+   io.emit('userlist', users, socket.id);
+    console.log("one user connected " + username+" socket id is "+socket.id);
     console.log(users);
-    userSockets[socket.id] = socket;
-    io.emit('userlist', users, socket.id);
-    console.log("one user connected" + username);
   });
+  function isConected(username) {
+    if(users.length >0){
+    for (var i in users) {
+      if(users[i].name === username){
+         users[i].soketId=socket.id;
+        return true;
+      }
+     }
+     return false;
+    }
+  }
   socket.on('send message', (dataString) => {
     var data = JSON.parse(dataString)
     var messageObject = {
       message: data.message,
       from_id: data.from_id
     }
+    console.log("message sending");
     userSockets[data.to_id].emit('get message', messageObject);
-    console.log(data.message);
+    console.log("yes msg send to  "+data.to_id+"  from "+data.from_id);
   });
   socket.on('client message', function (msg, name) {
     if (msg === "hi") {
