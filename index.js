@@ -20,7 +20,6 @@ var dbclient = new PGclient({
   connectionString: POSTGRES_URI,
   ssl: true,
 });
-var signedUserSocketId
 
 dbclient.connect();
 
@@ -74,6 +73,11 @@ app.post('/signout', function (req, res) {
           }
           if (result.rowCount > 0) {
             console.log("sign out")
+            for (var i in users) {
+              if(users[i].name === req.body.name){
+                 users.splice(i,1);
+              }
+             }
             return res.status(201).send({
               message: "logged out."
             });
@@ -89,20 +93,17 @@ app.post('/signin', function (req, res) {
       if (result.rowCount > 0){
         if(result.rows[0].loggedin === false){
         const sql= "UPDATE registration SET loggedin = 'true' WHERE name ='" + req.body.name + "'";
-        //const sql = 'INSERT INTO registration(name, password, loggedin) VALUES($1, $2,$3) ';
-       // const values = [req.body.name ,true];
-        dbclient.query(sql, function (err, result) {
-          if (err) {
-            console.log("error creating user"+err)
-           // dbclient.end();
-            return res.status(400).send({
-              message: "failed to create user."
-            });
-          }
-          if (result.rowCount > 0) {
+        dbclient.query(sql, function (err, row) {
+          if (err) { console.log("error creating user"+err) }
+          if (row.rowCount > 0) {
             console.log("sign in")
             return res.status(200).send({
               message: "Authorized"
+            });
+          }
+          else{
+            return res.status(404).send({
+              message: "User Already Loggedin"
             });
           }
         }); 
@@ -159,20 +160,20 @@ io.on('connection',  (socket) => {
     }
     console.log("message sending");
     userSockets[data.to_id].emit('get message', messageObject);
-    console.log("yes msg send to  "+data.to_id+"  from "+data.from_id);
+    console.log(data.message +"   msg send to  "+data.to_id+"  from "+data.from_id);
   });
   socket.on('client message', function (msg, name) {
     if (msg === "hi") {
       fs.readFile('hi.txt', 'utf8', function (err, data) {
         if (err) throw err;
         console.log(data);
-        io.emit('server message', data);
+        socket.emit('server message', data);
       });
     } else if (msg === "hello") {
       fs.readFile('hello.txt', 'utf8', function (err, data) {
         if (err) throw err;
         console.log(data);
-        io.emit('server message', data);
+        socket.emit('server message', data);
       });
 
     } else {
