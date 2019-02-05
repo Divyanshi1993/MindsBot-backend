@@ -4,15 +4,15 @@ import * as socketIo from 'socket.io';
 import {Client} from 'pg';
 import * as bodyParser from 'body-parser'
 import { Routes } from "./Routes/routes";
-var dbconfig = require('./DBConfig.json');
+var dbconfig = require('./Config/DBConfig.json');
 
 
 
 export class App {
-    public static readonly PORT: number = 8080;
-    public app: express.Application;
+    private static readonly PORT: number = 8080;
+    private app: express.Application;
     private server: Server;
-    private io: socketIo;
+    private io: socketIo.Server;
     private port: string | number;
     private Pgclient: any;
     private POSTGRES_URI = dbconfig ? dbconfig.POSTGRES_URI : process.env.DATABASE_URL;

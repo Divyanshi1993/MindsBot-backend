@@ -6,7 +6,7 @@ import  {UserList} from '../Model/userlist'
 
 
 export class SocketIoUtility {
-    private io: socketIo;
+    private io: socketIo.Client;
     private server: Server;
     public usrlist = new UserList().getUser;
     private userSockets = {};
