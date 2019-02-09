@@ -73,11 +73,6 @@ app.post('/signout', function (req, res) {
           }
           if (result.rowCount > 0) {
             console.log("sign out")
-            for (var i in users) {
-              if(users[i].name === req.body.name){
-                 users.splice(i,1);
-              }
-             }
             return res.status(201).send({
               message: "logged out."
             });
@@ -127,6 +122,14 @@ app.post('/signin', function (req, res) {
 
 
 io.on('connection',  (socket) => {
+  socket.on("disconnect_user",function(username){
+    for (var i in users) {
+      if(users[i].name === username){
+         users.splice(i,1);
+      }
+     }
+    io.emit('userlist', users, socket.id);
+  });  
 
   socket.on("connect_user", function (username) {
    
@@ -186,4 +189,7 @@ io.on('typing', function (socket) {
     io.emit('typing', type);
   });
 });
-http.listen(process.env.PORT || 3000);
+//http.listen(process.env.PORT || 3000);
+
+http.listen(3000, () => {
+  console.log('Express server listening on port ' + 3000);})
