@@ -189,7 +189,7 @@ io.on('typing', function (socket) {
     io.emit('typing', type);
   });
 });
-//http.listen(process.env.PORT || 3000);
+http.listen(process.env.PORT || 3000);
 
-http.listen(3000, () => {
-  console.log('Express server listening on port ' + 3000);})
+//http.listen(3000, () => {
+  //console.log('Express server listening on port ' + 3000);})
