@@ -161,7 +161,7 @@ io.on('connection',  (socket) => {
       message: data.message,
       from_id: data.from_id
     }
-    console.log("message sending to --- "+userSockets[data.to_id]);
+    console.log("message sending to --- "+userSockets[data.to_id].id);
     userSockets[data.to_id].emit('get message', messageObject);
     console.log(data.message +"   msg send to  "+data.to_id+"  from "+data.from_id);
   });
