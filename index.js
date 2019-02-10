@@ -73,7 +73,7 @@ app.post('/signout', function (req, res) {
           }
           if (result.rowCount > 0) {
             console.log("sign out")
-            return res.status(201).send({
+            return res.status(200).send({
               message: "logged out."
             });
           }
@@ -161,7 +161,7 @@ io.on('connection',  (socket) => {
       message: data.message,
       from_id: data.from_id
     }
-    console.log("message sending");
+    console.log("message sending to --- "+userSockets[data.to_id]);
     userSockets[data.to_id].emit('get message', messageObject);
     console.log(data.message +"   msg send to  "+data.to_id+"  from "+data.from_id);
   });
