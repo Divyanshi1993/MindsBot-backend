@@ -180,7 +180,7 @@ io.on('connection',  (socket) => {
       });
 
     } else {
-      io.emit('server message', "Sorry, Invalid input!");
+      socket.emit('server message', "Sorry, Invalid input!");
     }
   });
 });
